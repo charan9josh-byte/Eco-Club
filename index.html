@@ -1,0 +1,1415 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ECOMAFIA - Multiplayer Territory War</title>
+    <style>
+        :root {
+            --bg-primary: #0a0e1a;
+            --bg-secondary: #0f1420;
+            --bg-dark: #050810;
+            --accent-red: #ff0844;
+            --accent-cyan: #00d4ff;
+            --accent-gold: #ffb800;
+            --accent-green: #00ff88;
+            --accent-purple: #a855f7;
+            --accent-pink: #ff0080;
+            --glass-bg: rgba(15, 20, 32, 0.7);
+            --glass-border: rgba(0, 212, 255, 0.2);
+            --glow-cyan: 0 0 20px rgba(0, 212, 255, 0.6);
+            --glow-red: 0 0 20px rgba(255, 8, 68, 0.6);
+            --glow-gold: 0 0 20px rgba(255, 184, 0, 0.6);
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-20px); }
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        @keyframes slideInUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes shimmer {
+            0% { background-position: -1000px 0; }
+            100% { background-position: 1000px 0; }
+        }
+
+        @keyframes glow {
+            0%, 100% { box-shadow: 0 0 5px currentColor, 0 0 10px currentColor; }
+            50% { box-shadow: 0 0 20px currentColor, 0 0 40px currentColor; }
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
+            color: #f1f5f9;
+            min-height: 100vh;
+            padding: 20px;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .screen {
+            display: none;
+            animation: slideInUp 0.5s ease;
+        }
+
+        .screen.active {
+            display: block;
+        }
+
+        .lobby-screen {
+            text-align: center;
+            padding: 40px 20px;
+        }
+
+        .game-title {
+            font-size: 4em;
+            font-weight: 900;
+            background: linear-gradient(135deg, var(--accent-cyan), var(--accent-pink), var(--accent-gold));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 20px;
+            animation: pulse 3s infinite;
+        }
+
+        .subtitle {
+            font-size: 1.3em;
+            color: var(--accent-cyan);
+            margin-bottom: 40px;
+        }
+
+        .lobby-options {
+            display: flex;
+            gap: 30px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-bottom: 40px;
+        }
+
+        .option-card {
+            background: var(--glass-bg);
+            border: 2px solid var(--glass-border);
+            border-radius: 20px;
+            padding: 40px;
+            min-width: 300px;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .option-card:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--glow-cyan);
+            border-color: var(--accent-cyan);
+        }
+
+        .option-card h3 {
+            font-size: 1.8em;
+            color: var(--accent-gold);
+            margin-bottom: 15px;
+        }
+
+        .input-group {
+            margin: 20px 0;
+        }
+
+        .input-group label {
+            display: block;
+            color: var(--accent-cyan);
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+
+        .input-group input,
+        .input-group select {
+            width: 100%;
+            padding: 12px 15px;
+            background: rgba(0, 0, 0, 0.5);
+            border: 2px solid var(--accent-cyan);
+            border-radius: 10px;
+            color: #fff;
+            font-size: 1em;
+        }
+
+        .btn {
+            padding: 15px 40px;
+            border: none;
+            border-radius: 12px;
+            font-size: 1.1em;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--accent-cyan), var(--accent-purple));
+            color: #fff;
+        }
+
+        .btn-primary:hover {
+            transform: scale(1.05);
+            box-shadow: var(--glow-cyan);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+            border: 2px solid var(--accent-cyan);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .waiting-room {
+            background: var(--glass-bg);
+            border: 2px solid var(--glass-border);
+            border-radius: 20px;
+            padding: 40px;
+            margin: 40px auto;
+            max-width: 800px;
+            backdrop-filter: blur(10px);
+        }
+
+        .room-code-display {
+            background: rgba(0, 0, 0, 0.5);
+            padding: 20px;
+            border-radius: 15px;
+            margin: 20px 0;
+            border: 2px solid var(--accent-gold);
+        }
+
+        .room-code-display h3 {
+            color: var(--accent-gold);
+            font-size: 2em;
+        }
+
+        .players-list {
+            margin: 30px 0;
+        }
+
+        .player-item {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 15px 20px;
+            border-radius: 12px;
+            margin: 10px 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-left: 4px solid;
+        }
+
+        .player-ready {
+            color: var(--accent-green);
+            font-weight: 700;
+        }
+
+        .player-waiting {
+            color: var(--accent-gold);
+        }
+
+        .game-screen {
+            padding: 20px 0;
+        }
+
+        .game-header {
+            background: var(--glass-bg);
+            border: 2px solid var(--glass-border);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .round-info h2 {
+            color: var(--accent-gold);
+            font-size: 2em;
+        }
+
+        .timer-display {
+            text-align: center;
+        }
+
+        .timer {
+            font-size: 3em;
+            font-weight: 900;
+            color: var(--accent-cyan);
+            animation: pulse 1s infinite;
+        }
+
+        .allocation-section {
+            background: var(--glass-bg);
+            border: 2px solid var(--glass-border);
+            border-radius: 20px;
+            padding: 30px;
+            margin: 30px 0;
+            backdrop-filter: blur(10px);
+        }
+
+        .allocation-section h2 {
+            color: var(--accent-red);
+            font-size: 2em;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .men-counter {
+            text-align: center;
+            margin: 30px 0;
+        }
+
+        .men-counter .count {
+            font-size: 4em;
+            font-weight: 900;
+            color: var(--accent-gold);
+            animation: glow 2s infinite;
+        }
+
+        .territories-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            margin: 30px 0;
+        }
+
+        .territory-card {
+            background: rgba(0, 0, 0, 0.5);
+            border: 2px solid var(--accent-cyan);
+            border-radius: 15px;
+            padding: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .territory-card:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--glow-cyan);
+        }
+
+        .territory-card.big {
+            border-color: var(--accent-red);
+        }
+
+        .territory-card.medium {
+            border-color: var(--accent-gold);
+        }
+
+        .territory-card.small {
+            border-color: var(--accent-green);
+        }
+
+        .territory-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .territory-name {
+            font-size: 1.2em;
+            font-weight: 700;
+            color: var(--accent-cyan);
+        }
+
+        .territory-seats {
+            font-size: 1.1em;
+            color: var(--accent-gold);
+        }
+
+        .progress-bars {
+            margin: 15px 0;
+        }
+
+        .progress-bar {
+            height: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 5px;
+            margin: 5px 0;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            transition: width 0.3s ease;
+            border-radius: 5px;
+        }
+
+        .allocation-controls {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            justify-content: center;
+            margin-top: 15px;
+        }
+
+        .allocation-controls button {
+            width: 40px;
+            height: 40px;
+            border: none;
+            border-radius: 8px;
+            background: var(--accent-cyan);
+            color: #fff;
+            font-size: 1.5em;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .allocation-controls button:hover {
+            transform: scale(1.1);
+            box-shadow: var(--glow-cyan);
+        }
+
+        .allocation-controls button:active {
+            transform: scale(0.95);
+        }
+
+        .allocation-display {
+            font-size: 1.8em;
+            font-weight: 900;
+            color: var(--accent-gold);
+            min-width: 50px;
+            text-align: center;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            margin-top: 30px;
+        }
+
+        .leaderboard {
+            background: var(--glass-bg);
+            border: 2px solid var(--glass-border);
+            border-radius: 20px;
+            padding: 30px;
+            margin: 30px 0;
+            backdrop-filter: blur(10px);
+        }
+
+        .leaderboard h2 {
+            color: var(--accent-gold);
+            text-align: center;
+            font-size: 2em;
+            margin-bottom: 20px;
+        }
+
+        .leaderboard-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .leaderboard-table th,
+        .leaderboard-table td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .leaderboard-table th {
+            color: var(--accent-cyan);
+            font-weight: 700;
+        }
+
+        .rank-badge {
+            display: inline-block;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-weight: 700;
+        }
+
+        .rank-badge.gold {
+            background: linear-gradient(135deg, #ffd700, #ffed4e);
+            color: #000;
+        }
+
+        .rank-badge.silver {
+            background: linear-gradient(135deg, #c0c0c0, #e8e8e8);
+            color: #000;
+        }
+
+        .rank-badge.bronze {
+            background: linear-gradient(135deg, #cd7f32, #b87333);
+            color: #fff;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: var(--glass-bg);
+            border: 2px solid var(--accent-cyan);
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 600px;
+            backdrop-filter: blur(20px);
+            animation: slideInUp 0.5s ease;
+        }
+
+        .modal-content h2 {
+            color: var(--accent-gold);
+            font-size: 2.5em;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .result-item {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 15px;
+            border-radius: 10px;
+            margin: 10px 0;
+            border-left: 4px solid var(--accent-cyan);
+        }
+
+        @media (max-width: 768px) {
+            .game-title {
+                font-size: 2.5em;
+            }
+
+            .territories-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .lobby-options {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .option-card {
+                width: 100%;
+                max-width: 400px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Lobby Screen -->
+        <div class="screen active" id="lobbyScreen">
+            <div class="lobby-screen">
+                <h1 class="game-title">🎮 ECOMAFIA 🎮</h1>
+                <p class="subtitle">Real-Time Territory War Game - Up to 8 Players</p>
+                
+                <div class="lobby-options">
+                    <div class="option-card" id="createRoomCard">
+                        <h3>🏗️ Create Room</h3>
+                        <div class="input-group">
+                            <label>Your Name</label>
+                            <input type="text" id="createName" placeholder="Enter your name" maxlength="20">
+                        </div>
+                        <div class="input-group">
+                            <label>Room Code</label>
+                            <input type="text" id="createRoomCode" placeholder="4-digit code" maxlength="4">
+                        </div>
+                        <div class="input-group">
+                            <label>Join As</label>
+                            <select id="createRole">
+                                <option value="player">Player</option>
+                                <option value="spectator">Spectator</option>
+                            </select>
+                        </div>
+                        <button class="btn btn-primary" id="createRoomBtn">Create Room</button>
+                    </div>
+
+                    <div class="option-card" id="joinRoomCard">
+                        <h3>🚪 Join Room</h3>
+                        <div class="input-group">
+                            <label>Your Name</label>
+                            <input type="text" id="joinName" placeholder="Enter your name" maxlength="20">
+                        </div>
+                        <div class="input-group">
+                            <label>Room Code</label>
+                            <input type="text" id="joinRoomCode" placeholder="4-digit code" maxlength="4">
+                        </div>
+                        <div class="input-group">
+                            <label>Join As</label>
+                            <select id="joinRole">
+                                <option value="player">Player</option>
+                                <option value="spectator">Spectator</option>
+                            </select>
+                        </div>
+                        <button class="btn btn-primary" id="joinRoomBtn">Join Room</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Waiting Room Screen -->
+        <div class="screen" id="waitingScreen">
+            <div class="waiting-room">
+                <h2 style="color: var(--accent-cyan); text-align: center; font-size: 2.5em;">⏳ Waiting Room</h2>
+                
+                <div class="room-code-display">
+                    <h3>Room Code: <span id="displayRoomCode">----</span></h3>
+                    <p style="color: var(--accent-cyan); margin-top: 10px;">Share this code with other players</p>
+                </div>
+
+                <div class="players-list">
+                    <h3 style="color: var(--accent-gold); margin-bottom: 15px;">Players (<span id="playerCount">0</span>/8)</h3>
+                    <div id="playersContainer"></div>
+                </div>
+
+                <div class="action-buttons">
+                    <button class="btn btn-secondary" id="toggleReadyBtn">✓ Ready</button>
+                    <button class="btn btn-primary" id="startGameBtn" style="display: none;">🎮 Start Game</button>
+                    <button class="btn btn-secondary" id="leaveRoomBtn">← Leave Room</button>
+                </div>
+
+                <p style="text-align: center; color: var(--accent-cyan); margin-top: 20px;">
+                    Game will start automatically when everyone is ready (minimum 2 players)
+                </p>
+            </div>
+        </div>
+
+        <!-- Game Screen -->
+        <div class="screen" id="gameScreen">
+            <div class="game-screen">
+                <!-- Game Header -->
+                <div class="game-header">
+                    <div class="round-info">
+                        <h2>Round <span id="currentRound">1</span></h2>
+                        <p id="turnStatus" style="color: var(--accent-cyan); font-size: 1.2em;">Your Turn</p>
+                    </div>
+                    
+                    <div class="timer-display">
+                        <div style="color: var(--accent-gold); font-size: 0.9em;">Time Remaining</div>
+                        <div class="timer" id="timer">60</div>
+                    </div>
+                    
+                    <div style="text-align: right;">
+                        <div style="color: var(--accent-gold); font-size: 0.9em;">Your Team</div>
+                        <div style="font-size: 1.5em; font-weight: 700;" id="myTeam">-</div>
+                    </div>
+                </div>
+
+                <!-- Allocation Section -->
+                <div class="allocation-section">
+                    <h2>⚔️ ALLOCATE YOUR MEN ⚔️</h2>
+                    <div class="men-counter">
+                        <h3 style="color: var(--accent-cyan);">Men Remaining</h3>
+                        <div class="count" id="menRemaining">10</div>
+                    </div>
+                    <div class="territories-grid" id="territoriesGrid"></div>
+                    <div class="action-buttons">
+                        <button class="btn btn-secondary" id="resetBtn">🔄 Reset</button>
+                        <button class="btn btn-primary" id="submitBtn" disabled>✓ Submit Allocation</button>
+                    </div>
+                </div>
+
+                <!-- Leaderboard -->
+                <div class="leaderboard">
+                    <h2>🏆 Leaderboard</h2>
+                    <table class="leaderboard-table">
+                        <thead>
+                            <tr>
+                                <th>Rank</th>
+                                <th>Player</th>
+                                <th>Controlled</th>
+                                <th>Total Seats</th>
+                            </tr>
+                        </thead>
+                        <tbody id="leaderboardBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Round Results Modal -->
+        <div class="modal" id="roundModal">
+            <div class="modal-content">
+                <h2>🎯 Round Complete!</h2>
+                <div id="modalContent"></div>
+                <div class="action-buttons">
+                    <button class="btn btn-primary" id="nextRoundBtn">Continue ➔</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Game Over Modal -->
+        <div class="modal" id="gameOverModal">
+            <div class="modal-content">
+                <h2>🏆 Game Over!</h2>
+                <div id="winnerContent"></div>
+                <div class="action-buttons">
+                    <button class="btn btn-primary" id="newGameBtn">New Game</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const gameState = {
+            roomCode: null,
+            playerId: null,
+            playerName: null,
+            myTeamId: null,
+            isHost: false,
+            isSpectator: false,
+            currentRound: 1,
+            turnTimeLimit: 60,
+            timerInterval: null,
+            territories: [
+                { id: 1, name: "Port Authority", seats: 40, threshold: 12, category: "big", bonus: 5 },
+                { id: 2, name: "Industrial Zone", seats: 35, threshold: 12, category: "big", bonus: 4 },
+                { id: 3, name: "Downtown", seats: 28, threshold: 10, category: "medium", bonus: 3 },
+                { id: 4, name: "Riverbank", seats: 26, threshold: 10, category: "medium", bonus: 3 },
+                { id: 5, name: "Slums", seats: 22, threshold: 8, category: "medium", bonus: 2 },
+                { id: 6, name: "Highway Tollgate", seats: 22, threshold: 8, category: "medium", bonus: 2 },
+                { id: 7, name: "Airport Cargo", seats: 18, threshold: 6, category: "small", bonus: 1 },
+                { id: 8, name: "Harbor Smuggling", seats: 18, threshold: 6, category: "small", bonus: 1 },
+                { id: 9, name: "Street Gambling", seats: 15, threshold: 5, category: "small", bonus: 1 },
+                { id: 10, name: "Drug Market", seats: 15, threshold: 5, category: "small", bonus: 1 }
+            ],
+            players: {},
+            currentAllocation: Array(10).fill(0),
+            menRemaining: 10,
+            totalSoldiers: 10,
+            hasSubmitted: false,
+            targetSeats: 100
+        };
+
+        const teamColors = ['#3b82f6', '#ef4444', '#22c55e', '#f59e0b', '#8b5cf6', '#ec4899', '#14b8a6', '#f97316'];
+        const teamNames = ['Alpha', 'Beta', 'Gamma', 'Delta', 'Epsilon', 'Zeta', 'Eta', 'Theta'];
+
+        const mockBackend = {
+            rooms: {},
+            
+            createRoom(roomCode, playerName, role) {
+                if (this.rooms[roomCode]) {
+                    return { error: "Room already exists" };
+                }
+                const playerId = 'p' + Math.random().toString(36).substr(2, 9);
+                this.rooms[roomCode] = {
+                    hostId: playerId,
+                    players: role === 'player' ? {
+                        [playerId]: {
+                            id: playerId,
+                            name: playerName,
+                            teamId: 0,
+                            ready: false,
+                            totalSeats: 0,
+                            currentProgress: Array(10).fill(0),
+                            lastSafeProgress: Array(10).fill(0),
+                            currentAllocation: null,
+                            submittedAt: null,
+                            soldierPool: 10,
+                            carryover: 0,
+                            bonusSoldiers: 0
+                        }
+                    } : {},
+                    spectators: role === 'spectator' ? {
+                        [playerId]: { id: playerId, name: playerName, joinedAt: Date.now() }
+                    } : {},
+                    gameStarted: false,
+                    currentRound: 1,
+                    turnTimeLimit: 60,
+                    targetSeats: 100
+                };
+                return { playerId, roomCode, isHost: true, isSpectator: role === 'spectator' };
+            },
+
+            joinRoom(roomCode, playerName, role) {
+                const room = this.rooms[roomCode];
+                if (!room) {
+                    return { error: "Room not found" };
+                }
+                
+                const playerId = 'p' + Math.random().toString(36).substr(2, 9);
+                const playerCount = Object.keys(room.players).length;
+                
+                if (role === 'spectator') {
+                    room.spectators[playerId] = {
+                        id: playerId,
+                        name: playerName,
+                        joinedAt: Date.now()
+                    };
+                    return { playerId, roomCode, isHost: false, isSpectator: true };
+                }
+                
+                if (playerCount >= 8) {
+                    return { error: "Room is full (max 8 players)" };
+                }
+                
+                room.players[playerId] = {
+                    id: playerId,
+                    name: playerName,
+                    teamId: playerCount,
+                    ready: false,
+                    totalSeats: 0,
+                    currentProgress: Array(10).fill(0),
+                    lastSafeProgress: Array(10).fill(0),
+                    currentAllocation: null,
+                    submittedAt: null,
+                    soldierPool: 10,
+                    carryover: 0,
+                    bonusSoldiers: 0
+                };
+                
+                return { playerId, roomCode, isHost: false, isSpectator: false };
+            },
+
+            toggleReady(roomCode, playerId) {
+                const room = this.rooms[roomCode];
+                if (room && room.players[playerId]) {
+                    room.players[playerId].ready = !room.players[playerId].ready;
+                    return { success: true, ready: room.players[playerId].ready };
+                }
+                return { error: "Player not found" };
+            },
+
+            canStartGame(roomCode) {
+                const room = this.rooms[roomCode];
+                if (!room) return false;
+                const players = Object.values(room.players);
+                return players.length >= 2 && players.every(p => p.ready);
+            },
+
+            startGame(roomCode) {
+                const room = this.rooms[roomCode];
+                if (!room) return { error: "Room not found" };
+                
+                if (!this.canStartGame(roomCode)) {
+                    return { error: "Not all players are ready" };
+                }
+                
+                room.gameStarted = true;
+                room.currentRound = 1;
+                return { success: true };
+            },
+
+            submitAllocation(roomCode, playerId, allocation) {
+                const room = this.rooms[roomCode];
+                if (!room || !room.players[playerId]) {
+                    return { error: "Invalid room or player" };
+                }
+                
+                room.players[playerId].currentAllocation = [...allocation];
+                room.players[playerId].submittedAt = Date.now();
+                
+                const allSubmitted = Object.values(room.players).every(p => p.currentAllocation !== null);
+                
+                if (allSubmitted) {
+                    this.resolveRound(roomCode);
+                }
+                
+                return { success: true, allSubmitted };
+            },
+
+            resolveRound(roomCode) {
+                const room = this.rooms[roomCode];
+                if (!room) return;
+                
+                const players = Object.values(room.players);
+                const results = [];
+                
+                for (let tIdx = 0; tIdx < 10; tIdx++) {
+                    const territory = gameState.territories[tIdx];
+                    const allocations = players.map(p => ({
+                        playerId: p.id,
+                        teamId: p.teamId,
+                        name: p.name,
+                        allocated: p.currentAllocation[tIdx] || 0,
+                        tentativeProgress: p.lastSafeProgress[tIdx] + (p.currentAllocation[tIdx] || 0)
+                    }));
+                    
+                    const maxProgress = Math.max(...allocations.map(a => a.tentativeProgress));
+                    if (maxProgress === 0) continue;
+                    
+                    const contenders = allocations.filter(a => 
+                        a.tentativeProgress === maxProgress && a.allocated >= 1
+                    );
+                    
+                    if (contenders.length === 1) {
+                        const winner = contenders[0];
+                        const player = room.players[winner.playerId];
+                        player.currentProgress[tIdx] = winner.tentativeProgress;
+                        player.lastSafeProgress[tIdx] = winner.tentativeProgress;
+                        
+                        const controlled = winner.tentativeProgress >= territory.threshold;
+                        
+                        results.push({
+                            territory: tIdx,
+                            territoryName: territory.name,
+                            winner: winner.playerId,
+                            winnerName: winner.name,
+                            teamId: winner.teamId,
+                            allocated: winner.allocated,
+                            newProgress: winner.tentativeProgress,
+                            controlled: controlled,
+                            clash: false
+                        });
+                    } else if (contenders.length > 1) {
+                        contenders.forEach(c => {
+                            const player = room.players[c.playerId];
+                            player.currentProgress[tIdx] = player.lastSafeProgress[tIdx];
+                        });
+                        
+                        results.push({
+                            territory: tIdx,
+                            territoryName: territory.name,
+                            clash: true,
+                            maxProgress: maxProgress,
+                            contenders: contenders.map(c => ({
+                                playerId: c.playerId,
+                                name: c.name,
+                                teamId: c.teamId,
+                                allocated: c.allocated
+                            }))
+                        });
+                    } else {
+                        allocations.forEach(a => {
+                            if (a.allocated > 0) {
+                                const player = room.players[a.playerId];
+                                player.currentProgress[tIdx] = a.tentativeProgress;
+                                player.lastSafeProgress[tIdx] = a.tentativeProgress;
+                            }
+                        });
+                    }
+                }
+                
+                players.forEach(p => {
+                    let totalSeats = 0;
+                    let bonusSoldiers = 0;
+                    
+                    for (let tIdx = 0; tIdx < 10; tIdx++) {
+                        const territory = gameState.territories[tIdx];
+                        if (p.currentProgress[tIdx] >= territory.threshold) {
+                            totalSeats += territory.seats;
+                            bonusSoldiers += territory.bonus;
+                        }
+                    }
+                    
+                    p.totalSeats = totalSeats;
+                    p.bonusSoldiers = bonusSoldiers;
+                    
+                    const allocated = (p.currentAllocation || Array(10).fill(0)).reduce((a, b) => a + b, 0);
+                    p.carryover = p.soldierPool - allocated;
+                    p.soldierPool = p.carryover + bonusSoldiers + 10;
+                    
+                    p.currentAllocation = null;
+                    p.submittedAt = null;
+                });
+                
+                room.currentRound++;
+                room.results = results;
+                
+                return results;
+            },
+
+            getRoom(roomCode) {
+                return this.rooms[roomCode];
+            }
+        };
+
+        function showScreen(screenId) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById(screenId).classList.add('active');
+        }
+
+        document.getElementById('createRoomBtn').onclick = () => {
+            const name = document.getElementById('createName').value.trim();
+            const code = document.getElementById('createRoomCode').value.trim();
+            const role = document.getElementById('createRole').value;
+            
+            if (!name || !code) {
+                alert('Please enter your name and room code');
+                return;
+            }
+            
+            if (code.length !== 4) {
+                alert('Room code must be 4 characters');
+                return;
+            }
+            
+            const result = mockBackend.createRoom(code, name, role);
+            
+            if (result.error) {
+                alert(result.error);
+                return;
+            }
+            
+            gameState.roomCode = result.roomCode;
+            gameState.playerId = result.playerId;
+            gameState.playerName = name;
+            gameState.isHost = result.isHost;
+            gameState.isSpectator = result.isSpectator;
+            
+            if (!result.isSpectator) {
+                gameState.myTeamId = 0;
+            }
+            
+            showScreen('waitingScreen');
+            updateWaitingRoom();
+            startWaitingRoomUpdates();
+        };
+
+        document.getElementById('joinRoomBtn').onclick = () => {
+            const name = document.getElementById('joinName').value.trim();
+            const code = document.getElementById('joinRoomCode').value.trim();
+            const role = document.getElementById('joinRole').value;
+            
+            if (!name || !code) {
+                alert('Please enter your name and room code');
+                return;
+            }
+            
+            const result = mockBackend.joinRoom(code, name, role);
+            
+            if (result.error) {
+                alert(result.error);
+                return;
+            }
+            
+            gameState.roomCode = result.roomCode;
+            gameState.playerId = result.playerId;
+            gameState.playerName = name;
+            gameState.isHost = result.isHost;
+            gameState.isSpectator = result.isSpectator;
+            
+            if (!result.isSpectator) {
+                const room = mockBackend.getRoom(code);
+                const player = room.players[result.playerId];
+                gameState.myTeamId = player.teamId;
+            }
+            
+            showScreen('waitingScreen');
+            updateWaitingRoom();
+            startWaitingRoomUpdates();
+        };
+
+        document.getElementById('toggleReadyBtn').onclick = () => {
+            if (gameState.isSpectator) return;
+            
+            const result = mockBackend.toggleReady(gameState.roomCode, gameState.playerId);
+            if (result.success) {
+                updateWaitingRoom();
+            }
+        };
+
+        document.getElementById('startGameBtn').onclick = () => {
+            const result = mockBackend.startGame(gameState.roomCode);
+            if (result.success) {
+                clearInterval(waitingRoomInterval);
+                initializeGame();
+            } else {
+                alert(result.error);
+            }
+        };
+
+        document.getElementById('leaveRoomBtn').onclick = () => {
+            clearInterval(waitingRoomInterval);
+            location.reload();
+        };
+
+        let waitingRoomInterval;
+        
+        function startWaitingRoomUpdates() {
+            waitingRoomInterval = setInterval(() => {
+                updateWaitingRoom();
+                
+                const room = mockBackend.getRoom(gameState.roomCode);
+                if (room && room.gameStarted) {
+                    clearInterval(waitingRoomInterval);
+                    initializeGame();
+                }
+            }, 500);
+        }
+
+        function updateWaitingRoom() {
+            const room = mockBackend.getRoom(gameState.roomCode);
+            if (!room) return;
+            
+            document.getElementById('displayRoomCode').textContent = gameState.roomCode;
+            
+            const players = Object.values(room.players);
+            document.getElementById('playerCount').textContent = players.length;
+            
+            const container = document.getElementById('playersContainer');
+            container.innerHTML = '';
+            
+            players.forEach(player => {
+                const div = document.createElement('div');
+                div.className = 'player-item';
+                div.style.borderLeftColor = teamColors[player.teamId];
+                
+                const isYou = player.id === gameState.playerId;
+                const readyClass = player.ready ? 'player-ready' : 'player-waiting';
+                const readyText = player.ready ? '✓ Ready' : '⏳ Not Ready';
+                
+                div.innerHTML = `
+                    <div>
+                        <strong style="color: ${teamColors[player.teamId]};">${player.name}</strong>
+                        ${isYou ? '<span style="color: var(--accent-gold);"> (You)</span>' : ''}
+                        <div style="color: var(--accent-cyan); font-size: 0.9em;">Team ${teamNames[player.teamId]}</div>
+                    </div>
+                    <div class="${readyClass}">${readyText}</div>
+                `;
+                
+                container.appendChild(div);
+            });
+            
+            if (gameState.isHost && mockBackend.canStartGame(gameState.roomCode)) {
+                document.getElementById('startGameBtn').style.display = 'block';
+            } else {
+                document.getElementById('startGameBtn').style.display = 'none';
+            }
+        }
+
+        function initializeGame() {
+            const room = mockBackend.getRoom(gameState.roomCode);
+            gameState.players = room.players;
+            gameState.currentRound = room.currentRound;
+            gameState.targetSeats = room.targetSeats || 100;
+            
+            const myPlayer = gameState.players[gameState.playerId];
+            if (myPlayer) {
+                gameState.totalSoldiers = myPlayer.soldierPool;
+                gameState.menRemaining = myPlayer.soldierPool;
+            }
+            
+            showScreen('gameScreen');
+            renderTerritories();
+            updateGameDisplay();
+            startTurnTimer();
+            startGameUpdates();
+        }
+
+        function renderTerritories() {
+            const grid = document.getElementById('territoriesGrid');
+            grid.innerHTML = '';
+            
+            gameState.territories.forEach((territory, index) => {
+                const card = document.createElement('div');
+                card.className = `territory-card ${territory.category}`;
+                card.innerHTML = `
+                    <div class="territory-header">
+                        <div class="territory-name">${territory.name}</div>
+                        <div class="territory-seats">${territory.seats} seats</div>
+                    </div>
+                    <div style="font-size: 0.85em; color: var(--accent-gold); margin-bottom: 5px;">
+                        Control: ${territory.threshold} progress | +${territory.bonus} soldiers
+                    </div>
+                    <div class="progress-bars" id="progress-${index}"></div>
+                    <div class="allocation-controls">
+                        <button onclick="decrementTerritory(${index})">-</button>
+                        <div class="allocation-display" id="alloc-${index}">0</div>
+                        <button onclick="incrementTerritory(${index})">+</button>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        function incrementTerritory(index) {
+            if (gameState.hasSubmitted) return;
+            const allocated = gameState.currentAllocation.reduce((a, b) => a + b, 0);
+            if (allocated < gameState.totalSoldiers) {
+                gameState.currentAllocation[index]++;
+                updateGameDisplay();
+            }
+        }
+
+        function decrementTerritory(index) {
+            if (gameState.hasSubmitted) return;
+            if (gameState.currentAllocation[index] > 0) {
+                gameState.currentAllocation[index]--;
+                updateGameDisplay();
+            }
+        }
+
+        document.getElementById('resetBtn').onclick = () => {
+            if (gameState.hasSubmitted) return;
+            gameState.currentAllocation = Array(10).fill(0);
+            updateGameDisplay();
+        };
+
+        document.getElementById('submitBtn').onclick = () => {
+            if (gameState.hasSubmitted) return;
+            
+            gameState.hasSubmitted = true;
+            const btn = document.getElementById('submitBtn');
+            btn.textContent = '✓ Submitted';
+            btn.disabled = true;
+            document.getElementById('resetBtn').disabled = true;
+            
+            const allocated = gameState.currentAllocation.reduce((a, b) => a + b, 0);
+            const carriedOver = gameState.totalSoldiers - allocated;
+            
+            mockBackend.submitAllocation(gameState.roomCode, gameState.playerId, gameState.currentAllocation);
+            
+            clearInterval(gameState.timerInterval);
+            document.getElementById('turnStatus').textContent = `⏳ Waiting... (${carriedOver} soldiers will carry over)`;
+        };
+
+        function updateGameDisplay() {
+            const myPlayer = gameState.players[gameState.playerId];
+            if (myPlayer) {
+                gameState.totalSoldiers = myPlayer.soldierPool;
+                const allocated = gameState.currentAllocation.reduce((a, b) => a + b, 0);
+                gameState.menRemaining = gameState.totalSoldiers - allocated;
+            }
+            
+            document.getElementById('menRemaining').textContent = `${gameState.menRemaining} / ${gameState.totalSoldiers}`;
+            document.getElementById('currentRound').textContent = gameState.currentRound;
+            document.getElementById('myTeam').textContent = teamNames[gameState.myTeamId];
+            document.getElementById('myTeam').style.color = teamColors[gameState.myTeamId];
+            
+            gameState.territories.forEach((territory, index) => {
+                document.getElementById(`alloc-${index}`).textContent = gameState.currentAllocation[index];
+                
+                const progressDiv = document.getElementById(`progress-${index}`);
+                progressDiv.innerHTML = '';
+                
+                const myPlayer = gameState.players[gameState.playerId];
+                if (myPlayer) {
+                    const myProgress = myPlayer.currentProgress[index];
+                    const threshold = territory.threshold;
+                    const percentage = Math.min((myProgress / threshold) * 100, 100);
+                    
+                    progressDiv.innerHTML = `
+                        <div style="display: flex; justify-content: space-between; font-size: 0.85em; color: var(--accent-cyan); margin-bottom: 5px;">
+                            <span>Your Progress: ${myProgress}/${threshold}</span>
+                            <span>${Math.round(percentage)}%</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: ${percentage}%; background: ${teamColors[gameState.myTeamId]};"></div>
+                        </div>
+                    `;
+                }
+            });
+            
+            const submitBtn = document.getElementById('submitBtn');
+            submitBtn.disabled = gameState.hasSubmitted;
+            
+            updateLeaderboard();
+        }
+
+        function updateLeaderboard() {
+            const players = Object.values(gameState.players).sort((a, b) => b.totalSeats - a.totalSeats);
+            const tbody = document.getElementById('leaderboardBody');
+            tbody.innerHTML = '';
+            
+            players.forEach((player, index) => {
+                const controlled = gameState.territories.filter((_, tIdx) => 
+                    player.currentProgress[tIdx] >= gameState.territories[tIdx].threshold
+                ).length;
+                
+                let rankClass = '';
+                if (index === 0) rankClass = 'gold';
+                else if (index === 1) rankClass = 'silver';
+                else if (index === 2) rankClass = 'bronze';
+                
+                const row = document.createElement('tr');
+                row.style.background = player.id === gameState.playerId ? 'rgba(56, 189, 248, 0.1)' : '';
+                row.innerHTML = `
+                    <td><span class="rank-badge ${rankClass}">${index + 1}</span></td>
+                    <td style="color: ${teamColors[player.teamId]}; font-weight: 700;">${player.name} (${teamNames[player.teamId]})</td>
+                    <td><strong>${controlled}</strong></td>
+                    <td><strong style="font-size: 1.2em; color: var(--accent-gold);">${player.totalSeats}</strong></td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        function startTurnTimer() {
+            clearInterval(gameState.timerInterval);
+            let timeLeft = gameState.turnTimeLimit;
+            document.getElementById('timer').textContent = timeLeft;
+            document.getElementById('turnStatus').textContent = '⏰ Your Turn - Make Your Move!';
+            
+            gameState.timerInterval = setInterval(() => {
+                timeLeft--;
+                document.getElementById('timer').textContent = timeLeft;
+                
+                if (timeLeft <= 10) {
+                    document.getElementById('timer').style.color = '#ff0844';
+                } else {
+                    document.getElementById('timer').style.color = '#00d4ff';
+                }
+                
+                if (timeLeft === 0) {
+                    clearInterval(gameState.timerInterval);
+                    if (!gameState.hasSubmitted) {
+                        document.getElementById('submitBtn').click();
+                    }
+                }
+            }, 1000);
+        }
+
+        let gameUpdateInterval;
+        
+        function startGameUpdates() {
+            gameUpdateInterval = setInterval(() => {
+                const room = mockBackend.getRoom(gameState.roomCode);
+                if (!room) return;
+                
+                gameState.players = room.players;
+                
+                if (room.results) {
+                    clearInterval(gameUpdateInterval);
+                    showRoundResults(room.results);
+                    room.results = null;
+                }
+                
+                updateGameDisplay();
+            }, 500);
+        }
+
+        function showRoundResults(results) {
+            const modal = document.getElementById('roundModal');
+            const content = document.getElementById('modalContent');
+            content.innerHTML = '';
+            
+            const myPlayer = gameState.players[gameState.playerId];
+            
+            const statsDiv = document.createElement('div');
+            statsDiv.style.cssText = 'background: rgba(0,212,255,0.1); padding: 15px; border-radius: 10px; margin-bottom: 20px; border: 2px solid var(--accent-cyan);';
+            statsDiv.innerHTML = `
+                <h3 style="color: var(--accent-cyan); margin-bottom: 10px;">Your Status</h3>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                    <div><strong>Total Seats:</strong> ${myPlayer.totalSeats}</div>
+                    <div><strong>Next Pool:</strong> ${myPlayer.soldierPool} soldiers</div>
+                    <div><strong>Carryover:</strong> ${myPlayer.carryover}</div>
+                    <div><strong>Bonuses:</strong> +${myPlayer.bonusSoldiers}</div>
+                </div>
+            `;
+            content.appendChild(statsDiv);
+            
+            results.forEach(result => {
+                const territory = gameState.territories[result.territory];
+                const div = document.createElement('div');
+                div.className = 'result-item';
+                
+                if (result.clash) {
+                    const contenderList = result.contenders.map(c => 
+                        `<span style="color: ${teamColors[c.teamId]};">${c.name} (${c.allocated})</span>`
+                    ).join(', ');
+                    
+                    div.innerHTML = `
+                        <strong style="color: var(--accent-red);">⚔️ ${result.territoryName}</strong>
+                        <div style="color: var(--accent-gold); margin-top: 5px;">
+                            CLASH at ${result.maxProgress} progress! All reverted to safe progress.
+                        </div>
+                        <div style="font-size: 0.9em; margin-top: 5px;">
+                            Contenders: ${contenderList}
+                        </div>
+                    `;
+                } else if (result.winner) {
+                    const isMe = result.winner === gameState.playerId;
+                    const icon = result.controlled ? '👑' : '✓';
+                    const status = result.controlled ? 'CONTROLLED' : `Progress: ${result.newProgress}/${territory.threshold}`;
+                    
+                    div.style.borderLeftColor = isMe ? teamColors[gameState.myTeamId] : '';
+                    div.style.borderLeftWidth = isMe ? '4px' : '';
+                    
+                    div.innerHTML = `
+                        <strong style="color: ${teamColors[result.teamId]};">${icon} ${result.territoryName}</strong>
+                        <div style="margin-top: 5px;">
+                            ${result.winnerName} ${isMe ? '(YOU)' : ''} advanced +${result.allocated} → ${status}
+                        </div>
+                    `;
+                }
+                
+                content.appendChild(div);
+            });
+            
+            modal.classList.add('active');
+        }
+
+        document.getElementById('nextRoundBtn').onclick = () => {
+            document.getElementById('roundModal').classList.remove('active');
+            
+            const myPlayer = gameState.players[gameState.playerId];
+            const maxSeats = Math.max(...Object.values(gameState.players).map(p => p.totalSeats));
+            
+            if (maxSeats >= gameState.targetSeats) {
+                showGameOver();
+            } else {
+                gameState.currentAllocation = Array(10).fill(0);
+                gameState.totalSoldiers = myPlayer.soldierPool;
+                gameState.menRemaining = myPlayer.soldierPool;
+                gameState.hasSubmitted = false;
+                document.getElementById('submitBtn').disabled = false;
+                document.getElementById('submitBtn').textContent = '✓ Submit Allocation';
+                document.getElementById('resetBtn').disabled = false;
+                
+                updateGameDisplay();
+                startTurnTimer();
+                startGameUpdates();
+            }
+        };
+
+        function showGameOver() {
+            const modal = document.getElementById('gameOverModal');
+            const content = document.getElementById('winnerContent');
+            
+            const winner = Object.values(gameState.players).sort((a, b) => b.totalSeats - a.totalSeats)[0];
+            
+            content.innerHTML = `
+                <div style="text-align: center;">
+                    <div style="font-size: 3em; margin: 20px 0;">🎉</div>
+                    <h3 style="color: ${teamColors[winner.teamId]}; font-size: 2em; margin-bottom: 15px;">
+                        ${winner.name} WINS!
+                    </h3>
+                    <div style="color: var(--accent-gold); font-size: 1.3em;">
+                        Team ${teamNames[winner.teamId]}
+                    </div>
+                    <div style="font-size: 2em; font-weight: 900; color: #fff; margin-top: 20px;">
+                        ${winner.totalSeats} Total Seats
+                    </div>
+                </div>
+            `;
+            
+            modal.classList.add('active');
+        }
+
+        document.getElementById('newGameBtn').onclick = () => {
+            location.reload();
+        };
+    </script>
+</body>
+</html>
